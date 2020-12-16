@@ -1,34 +1,44 @@
-import { combineReducers, createStore } from 'redux';
+import { applyMiddleware, combineReducers, createStore } from 'redux';
+
+import thunk from 'redux-thunk';
 
 // actions.js
-export const activateGeod = geod => ({
-  type: 'ACTIVATE_GEOD',
-  geod,
+export const addRepos = repos => ({
+  type: 'ADD_REPOS',
+  repos,
 });
 
-export const closeGeod = () => ({
-  type: 'CLOSE_GEOD',
-});
+export const clearRepos = () => ({ type: 'CLEAR_REPOS' });
+
+export const getRepos = username => async dispatch => {
+  try {
+    const url = `https://api.github.com/users/${username}/repos?sort=updated`;
+    const response = await fetch(url)
+    const responseBody = await response.json();
+    dispatch(addRepos(responseBody));
+  } catch (error) {
+    console.error(error);
+    dispatch(clearRepos());
+  }
+}
 
 // reducers.js
-export const geod = (state = {}, action) => {
+export const repos = (state = [], action) => {
   switch (action.type) {
-    case 'ACTIVATE_GEOD':
-      return action.geod;
-    case 'CLOSE_GEOD':
-      return {};
+    case 'ADD_REPOS':
+      return action.repos;
+    case 'CLEAR_REPOS':
+      return [];
     default:
       return state;
   }
 };
 
-export const reducers = combineReducers({
-  geod,
-});
+export const reducers = combineReducers({ repos });
 
 // store.js
 export function configureStore(initialState = {}) {
-  const store = createStore(reducers, initialState);
+  const store = createStore(reducers, initialState, applyMiddleware(thunk));
   return store;
 }
 
